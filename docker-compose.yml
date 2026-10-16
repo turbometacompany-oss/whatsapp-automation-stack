@@ -1,0 +1,175 @@
+# WhatsApp Automation Stack
+# N8N + Evolution API + PostgreSQL + Redis + Caddy (HTTPS automatico)
+#
+# IMPORTANTE: troque TODAS as senhas e chaves marcadas com "troque-" antes de
+# colocar em producao (no painel da Hostinger ou em um arquivo .env local).
+
+name: whatsapp-automation-stack
+
+services:
+  # ---------------------------------------------------------------- Bancos
+  postgres-n8n:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${N8N_DB_USER:-n8n}
+      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD:-troque-esta-senha-n8n}
+      POSTGRES_DB: ${N8N_DB_NAME:-n8n}
+    volumes:
+      - n8n_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${N8N_DB_USER:-n8n} -d ${N8N_DB_NAME:-n8n}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  postgres-evolution:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${EVOLUTION_DB_USER:-evolution}
+      POSTGRES_PASSWORD: ${EVOLUTION_DB_PASSWORD:-troque-esta-senha-evolution}
+      POSTGRES_DB: ${EVOLUTION_DB_NAME:-evolution}
+    volumes:
+      - evolution_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EVOLUTION_DB_USER:-evolution} -d ${EVOLUTION_DB_NAME:-evolution}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ------------------------------------------------------- Evolution API
+  evolution-api:
+    image: evoapicloud/evolution-api:${EVOLUTION_VERSION:-v2.3.7}
+    restart: unless-stopped
+    depends_on:
+      postgres-evolution:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${PUBLIC_BIND_IP:-0.0.0.0}:${EVOLUTION_PORT:-8080}:8080"
+    environment:
+      SERVER_URL: ${EVOLUTION_SERVER_URL:-http://localhost:8080}
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-troque-esta-chave-evolution}
+      # Banco de dados
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${EVOLUTION_DB_USER:-evolution}:${EVOLUTION_DB_PASSWORD:-troque-esta-senha-evolution}@postgres-evolution:5432/${EVOLUTION_DB_NAME:-evolution}
+      DATABASE_CONNECTION_CLIENT_NAME: evolution
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      # Cache (Redis)
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/6
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+      CACHE_LOCAL_ENABLED: "false"
+    volumes:
+      - evolution_instances:/evolution/instances
+
+  # ----------------------------------------------------------------- N8N
+  # Na primeira inicializacao este container:
+  #   1) instala o no da comunidade "n8n-nodes-evolution-api"
+  #   2) importa o workflow de WORKFLOWS_IMPORT_URL (desativado)
+  # Se algum passo falhar, o N8N inicia normalmente e o erro aparece nos logs.
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres-n8n:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${PUBLIC_BIND_IP:-0.0.0.0}:${N8N_PORT:-5678}:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres-n8n
+      DB_POSTGRESDB_PORT: "5432"
+      DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME:-n8n}
+      DB_POSTGRESDB_USER: ${N8N_DB_USER:-n8n}
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:-troque-esta-senha-n8n}
+      # Chave que criptografa as credenciais salvas no N8N.
+      # Defina uma vez e NUNCA mude depois (senao as credenciais ficam ilegiveis).
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-troque-esta-chave-n8n}
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      # Mantenha "false" enquanto acessar por http (IP). Use "true" com dominio e HTTPS.
+      N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE:-false}
+      N8N_COMMUNITY_PACKAGES_ENABLED: "true"
+      GENERIC_TIMEZONE: ${TZ:-America/Sao_Paulo}
+      TZ: ${TZ:-America/Sao_Paulo}
+      EVOLUTION_NODE_VERSION: ${EVOLUTION_NODE_VERSION:-1.0.4}
+      WORKFLOWS_IMPORT_URL: ${WORKFLOWS_IMPORT_URL:-https://raw.githubusercontent.com/turbometacompany-oss/whatsapp-automation-stack/refs/heads/main/workflows/01-agente-agendamento-whatsapp.json}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        NODES_DIR=/home/node/.n8n/nodes
+        mkdir -p "$$NODES_DIR"
+        if [ ! -d "$$NODES_DIR/node_modules/n8n-nodes-evolution-api" ]; then
+          echo "[setup] Instalando n8n-nodes-evolution-api@$$EVOLUTION_NODE_VERSION"
+          ( cd "$$NODES_DIR" \
+            && { [ -f package.json ] || echo '{"name":"installed-nodes","private":true}' > package.json; } \
+            && npm install --no-audit --no-fund "n8n-nodes-evolution-api@$$EVOLUTION_NODE_VERSION" ) \
+          || echo "[setup] AVISO: a instalacao automatica do no falhou. Instale em Settings > Community Nodes."
+        fi
+        MARKER=/home/node/.n8n/.workflow-imported
+        if [ ! -f "$$MARKER" ]; then
+          echo "[setup] Importando workflow de $$WORKFLOWS_IMPORT_URL"
+          if wget -q -O /tmp/workflow.json "$$WORKFLOWS_IMPORT_URL" && n8n import:workflow --input=/tmp/workflow.json; then
+            touch "$$MARKER"
+          else
+            echo "[setup] AVISO: a importacao automatica falhou. Importe o arquivo da pasta workflows/ manualmente."
+          fi
+        fi
+        exec tini -- /docker-entrypoint.sh
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  # --------------------------------------------------------------- Caddy
+  # Proxy reverso com HTTPS automatico (Let's Encrypt).
+  # Aponte os dominios N8N_DOMAIN e EVOLUTION_DOMAIN para o IP do servidor (DNS tipo A).
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - n8n
+      - evolution-api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      N8N_DOMAIN: ${N8N_DOMAIN:-n8n.localhost}
+      EVOLUTION_DOMAIN: ${EVOLUTION_DOMAIN:-evolution.localhost}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        printf '%s {\n\treverse_proxy n8n:5678\n}\n\n%s {\n\treverse_proxy evolution-api:8080\n}\n' "$$N8N_DOMAIN" "$$EVOLUTION_DOMAIN" > /etc/caddy/Caddyfile
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  n8n_postgres_data:
+  evolution_postgres_data:
+  redis_data:
+  evolution_instances:
+  n8n_data:
+  caddy_data:
+  caddy_config:

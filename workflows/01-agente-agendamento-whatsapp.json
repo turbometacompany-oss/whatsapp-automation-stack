@@ -1,0 +1,995 @@
+{
+  "name": "Agente de agendamento WhatsApp - audio, ClickUp e Google Calendar",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-agente",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -752,
+        -384
+      ],
+      "id": "e6ee9b48-e8e2-4223-9255-747a4ac93c55",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "db1f3e05-4836-4fe5-b462-6be314734f10",
+              "name": "event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "9ab8b826-5a88-408c-ba75-61e1108f1a3c",
+              "name": "instance",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "d8b9e911-9fc6-4012-b287-aee933ac0209",
+              "name": "remoteJid",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "f2ca12c8-4eda-449a-ab74-2313dfb77897",
+              "name": "fromMe",
+              "value": "={{ $json.body.data.key.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "cb4aa4db-4f69-42c2-b151-56004f308bbc",
+              "name": "pushName",
+              "value": "={{ $json.body.data.pushName }}",
+              "type": "string"
+            },
+            {
+              "id": "8d3daafa-ca58-4d03-9325-a524d8db829c",
+              "name": "comversation",
+              "value": "={{ $json.body.data.message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "5eea113e-a39a-4461-a732-6f9b8c2c3517",
+              "name": "messageType",
+              "value": "={{ $json.body.data.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "2d7d43ca-0074-4027-8a4d-43dca576f7ab",
+              "name": "timestamp",
+              "value": "={{ $json.body.data.messageTimestamp }}",
+              "type": "number"
+            },
+            {
+              "id": "308baf2b-9f15-4c5c-a95c-9a04074a5415",
+              "name": "idmessage",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -576,
+        -384
+      ],
+      "id": "26481b71-ce8c-4440-9251-8c5d46fb94ef",
+      "name": "Dados"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Mensagem').item.json.message }}",
+        "options": {
+          "systemMessage": "=Você é o Assistente Virtual da [NOME_DA_EMPRESA], especializada em [DESCREVA_EM_UMA_FRASE_O_QUE_A_EMPRESA_FAZ].\n\nSeu objetivo é acolher o lead, entender o interesse dele, coletar as informações essenciais e agendar um contato com o time da [NOME_DA_EMPRESA].\n\n⚠️ Não ofereça consultoria, análises ou promessas de resultado.\nSeu papel é apenas organizar as informações, gerar conexão e direcionar para o especialista.\n\n---\n\nTOM DE ATENDIMENTO\n• Humanizado, profissional e objetivo\n• Linguagem simples e acessível\n• Perguntas curtas e claras\n• Use o nome do lead assim que ele informar\n• Criar conexão leve (rapport natural)\n• Conversa natural e fluida\n• Não parecer robótico\n• Não pressionar venda\n• Não falar de valores\n\n---\n\nOBSERVAÇÃO IMPORTANTE\n[OPCIONAL: descreva aqui o contexto do primeiro contato. Exemplo: o lead já recebeu uma mensagem inicial da empresa e o assistente não deve repetir essa informação. Apague esta seção se não se aplicar.]\n\n---\n\nFLUXO DE ATENDIMENTO (OBRIGATÓRIO)\n\n1️⃣ RECEPÇÃO\n\nOlá! 👋\nSou do time da [NOME_DA_EMPRESA].\nPosso te explicar rapidinho o motivo do nosso contato e depois te fazer algumas perguntas rápidas?\n\n(Aguardar resposta)\nObservação: A sua resposta deve ser enviada em formato de audio caso tenha recebido resposta por audio\n\n---\n\n2️⃣ MOTIVO DO CONTATO + POSICIONAMENTO (SEM VENDER)\n\n\"[EXPLIQUE EM UMA FRASE O MOTIVO DO CONTATO]\"\n\n\"[EXPLIQUE EM UMA FRASE A PROPOSTA DA EMPRESA, SEM PROMETER RESULTADO]\"\n\n\"Se fizer sentido pra você, posso entender rapidamente seu cenário e depois te conectar com o especialista responsável.\"\n\n---\n\n3️⃣ PERGUNTA DE INTERESSE / SITUAÇÃO ATUAL\n\n[FAÇA UMA PERGUNTA ABERTA SOBRE A SITUAÇÃO ATUAL DO LEAD. Exemplo: Hoje vocês já utilizam [SOLUÇÃO/ASSUNTO] ou ainda estão estruturando essa parte?]\n\n(Aguardar resposta e conduzir naturalmente)\n\nSe demonstrar abertura →\n\nBoa, faz sentido pelo que você me trouxe.\n\nQue tal a gente marcar uma conversa rápida de 15 minutinhos? Sem compromisso, tá?\n\n---\n\n4️⃣ COLETA DE DADOS (UMA PERGUNTA POR VEZ – OBRIGATÓRIO)\n\nNOME\nQual é o seu nome?\n\nTELEFONE\nQual telefone podemos usar para contato?\n\nOPCIONAL (se o lead ainda não tiver informado)\nTipo de negócio\nCidade e região\n\n---\n\n5️⃣ DIRECIONAMENTO PARA AGENDAMENTO (SE HOUVER INTERESSE)\n\nPerfeito! 🙏\nPosso te conectar com o especialista responsável.\n\nQual dia e horário ficam melhores pra você?\n\n---\n\nREGRAS DE AGENDAMENTO\n\n• Usar referência: {{ $now.format('dd-MM-yyyy HH:mm') }}\n• Consultar a disponibilidade no Google Calendar antes de propor ou aceitar um horário\n• Se pedir fora do horário ou em horário ocupado → solicitar outro horário\n• Sempre confirmar antes de registrar\n\nExemplo:\n\nEntão ficou dia [X] às [Y] horas, correto?\n\n---\n\nREGISTRO (OBRIGATÓRIO, SOMENTE APÓS A CONFIRMAÇÃO DO LEAD)\n\n1. Criar o evento no Google Calendar com a data e o horário combinados.\n2. Criar TASK no ClickUp:\n   Task Name: Agendamento – [Nome do Lead]\n   Description: Nome e Telefone\n   Inserir data e horário combinados.\n3. Adicionar uma linha na planilha do Google Sheets com: Nome, Telefone, Data e hora, Tipo de negócio e Cidade e região (deixe em branco o que não foi informado).\n\n---\n\nCONFIRMAÇÃO AO LEAD\n\nTudo certo! ✅\nSeu contato foi agendado com sucesso.\n\nUm especialista da [NOME_DA_EMPRESA] falará com você no dia e horário combinados.\n\n---\n\nTRATAMENTO DE ERROS\n\nPeço desculpas pelo transtorno 🙏\nUm momento, por favor, estou verificando isso pra você.\n\n---\n\nREGRAS GERAIS\n\n• Não falar valores\n• Não prometer resultado\n• Não dar consultoria\n• Não pular perguntas obrigatórias\n• Não agendar sem confirmar data e hora\n• Conversar naturalmente\n• Se não houver interesse → encerrar com educação\n\nSEM INTERESSE:\nExemplo: Não quero, não obrigado e etc.\n\n\"Perfeito, sem problemas!\nSe no futuro fizer sentido pra você, ficamos à disposição.\nObrigado pelo seu tempo 🙏\"\n\nMENSAGEM AUTOMÁTICA (quando a resposta do contato parecer um robô ou resposta automática):\n\n\"Perfeito! Vi que essa é uma mensagem automática, então vou ser breve 🙂\n\n[EXPLIQUE EM 1 OU 2 FRASES QUEM É A EMPRESA E O MOTIVO DO CONTATO]\n\nQuem seria a melhor pessoa aí pra falar sobre isso? Ou posso te chamar em outro momento?\"\n\n---\n\nOBJETIVO FINAL\n\n✔ Gerar conexão\n✔ Explicar o motivo do contato\n✔ Validar interesse\n✔ Coletar dados\n✔ Agendar reunião\n✔ Registrar no Calendar, ClickUp e Google Sheets\n✔ Confirmar com o lead\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1024,
+        -528
+      ],
+      "id": "9728dad5-47da-4bc7-8fd4-78501f880dd0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        992,
+        -304
+      ],
+      "id": "42f99171-81a5-4701-9171-872416273a65",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "= {{ $('Dados').item.json.instance }} {{ $('Dados').item.json.remoteJid }} chat_memory",
+        "sessionTTL": 3600,
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        1056,
+        -128
+      ],
+      "id": "83af5b5f-ba47-4c57-8fe2-8ce9f08c54fa",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e57e6815-3b5f-45cc-b0ab-3fbd9c40888e",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "59232e4d-2809-4f0f-8273-cf3de951ad7a",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "audioMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "352e9fb3-d755-47fe-8d93-5dd6ac7662b6",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "imageMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -384,
+        -384
+      ],
+      "id": "46400f03-cb26-427c-a770-123456650a77",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "951f8d69-68cf-4c95-8a8c-dffa8a8bcb22",
+              "name": "message",
+              "value": "={{ $json.comversation }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        -592
+      ],
+      "id": "ce75af36-b948-4b39-9313-191746d50e67",
+      "name": "Mensagem de texto"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9c473c1e-e31f-45f4-b7a5-ed4868007788",
+              "name": "message",
+              "value": "={{ $json.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        800,
+        -528
+      ],
+      "id": "e51d3ce4-f1ea-4f4c-bc12-224775ed5852",
+      "name": "Mensagem"
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "get-media-base64",
+        "instanceName": "={{ $json.instance }}",
+        "messageId": "={{ $json.idmessage }}"
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        16
+      ],
+      "id": "4c855f37-0204-4769-822d-29fbd63fac1a",
+      "name": "Obter midia em base64",
+      "credentials": {
+        "evolutionApi": {
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {
+          "fileName": "audio.mp3",
+          "mimeType": "audio/mpeg"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        16
+      ],
+      "id": "88be12ec-c136-43cc-ab57-66e5ccf613e9",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        16
+      ],
+      "id": "7424b8ae-c5b3-42eb-9da0-a79571fa5c40",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7cde7ba0-d56a-475e-a17f-ac532c4e4cd4",
+              "name": "message",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        16
+      ],
+      "id": "99464708-8ee9-4cb1-8a39-e12d8c0caaef",
+      "name": "Mensagem de Audio"
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "get-media-base64",
+        "instanceName": "={{ $json.instance }}",
+        "messageId": "={{ $json.idmessage }}"
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -304
+      ],
+      "id": "29c39ee4-21a6-4e9b-b9cc-082a6b1d6819",
+      "name": "Obter m dia em base64",
+      "credentials": {
+        "evolutionApi": {
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        -304
+      ],
+      "id": "b8ee065c-d88a-4c1d-ba58-1a6efb7b8a56",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "O que essa imagem representa?",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        -304
+      ],
+      "id": "8141264b-03cb-4d47-beb0-b83c19cadd99",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bae34cb9-077f-4c4a-9d9c-5ef30b5f1a95",
+              "name": "message",
+              "value": "={{ $json['0'].content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        528,
+        -304
+      ],
+      "id": "d52d31b2-df34-4407-96bd-96eb9f6a9e63",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1744,
+        -528
+      ],
+      "id": "48ab684b-0afa-457a-a0ee-11c51f80849d",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "send-audio",
+        "instanceName": "={{ $('Dados').item.json.instance }}",
+        "remoteJid": "={{ $('Dados').item.json.remoteJid }}",
+        "media": "={{ $json.data }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1952,
+        -528
+      ],
+      "id": "1697df1a-4c22-40b8-a8ad-f3438458c6ad",
+      "name": "Enviar audio",
+      "credentials": {
+        "evolutionApi": {
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.output }}",
+        "voice": "shimmer",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1424,
+        -528
+      ],
+      "id": "5dd626b8-42a0-4e63-875b-8a23850c7aab",
+      "name": "Generate audio",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "COLE_AQUI_O_ID_DA_SUA_PLANILHA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nome": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Nome', ``, 'string') }}",
+            "Telefone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Telefone', ``, 'string') }}",
+            "Data e hora": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Data_e_hora', ``, 'string') }}",
+            "Tipo de negócio": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tipo_de_neg_cio', ``, 'string') }}",
+            "Cidade e região": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Cidade_e_regi_o', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Nome",
+              "displayName": "Nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Telefone",
+              "displayName": "Telefone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Data e hora",
+              "displayName": "Data e hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tipo de negócio",
+              "displayName": "Tipo de negócio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cidade e região",
+              "displayName": "Cidade e região",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        112
+      ],
+      "id": "cda9e2be-fdfe-4bc7-b8f3-b0090f18f257",
+      "name": "Append row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "SEU_ID_DO_CALENDARIO@group.calendar.google.com",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1776,
+        -240
+      ],
+      "id": "5a43853a-31c4-4f66-aab7-71545601ebfb",
+      "name": "Get availability in a calendar in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "SEU_ID_DO_CALENDARIO@group.calendar.google.com",
+          "mode": "id"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1520,
+        -160
+      ],
+      "id": "1e162043-27ee-4a40-99b3-96f2e8d5bfe4",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "team": "SEU_TEAM_ID",
+        "space": "SEU_SPACE_ID",
+        "folder": "SEU_FOLDER_ID",
+        "list": "SEU_LIST_ID",
+        "name": "={{ $('Webhook').item.json.body.data.pushName }}\n{{ $('Switch').item.json.remoteJid }}",
+        "additionalFields": {
+          "dueDate": "={{ $('Dados').item.json.timestamp }}",
+          "status": "={{ $('Dados').item.json.event }}"
+        }
+      },
+      "type": "n8n-nodes-base.clickUpTool",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        -48
+      ],
+      "id": "591b17b7-1486-4bac-90aa-216c71a54344",
+      "name": "Create a task in ClickUp",
+      "credentials": {
+        "clickUpApi": {
+          "name": "ClickUp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3f6c1c1e-6a52-4d0e-9a53-1b7a3c0f7e11",
+              "leftValue": "={{ $json.fromMe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        -528
+      ],
+      "id": "8d2b7a40-5c1e-4f3a-9b6d-2e4f8a1c7d90",
+      "name": "Ignorar mensagens enviadas por mim"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados": {
+      "main": [
+        [
+          {
+            "node": "Ignorar mensagens enviadas por mim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Generate audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Mensagem de texto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obter midia em base64",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obter m dia em base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem de texto": {
+      "main": [
+        [
+          {
+            "node": "Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter midia em base64": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Mensagem de Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem de Audio": {
+      "main": [
+        [
+          {
+            "node": "Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obter m dia em base64": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Enviar audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability in a calendar in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task in ClickUp": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignorar mensagens enviadas por mim": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "tags": []
+}
